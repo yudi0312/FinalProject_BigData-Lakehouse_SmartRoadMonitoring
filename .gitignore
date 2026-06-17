@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+frontend/dist/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Runtime uploads: keep the folder, ignore uploaded images/files
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ML model weights are usually large; store separately or use Git LFS if needed
+backend/models/*.pt
+!backend/models/.gitkeep
+
+# Local database/data files
+*.db
+*.sqlite
+*.sqlite3
+postgres_data/
+pgdata/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
