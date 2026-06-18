@@ -27,10 +27,6 @@ env/
 backend/uploads/*
 !backend/uploads/.gitkeep
 
-# ML model weights are usually large; store separately or use Git LFS if needed
-backend/models/*.pt
-!backend/models/.gitkeep
-
 # Local database/data files
 *.db
 *.sqlite
