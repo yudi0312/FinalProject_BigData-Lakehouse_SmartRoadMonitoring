@@ -1,7 +1,7 @@
 import os
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import avg, col, count, current_timestamp, expr, from_json, lit, sum as spark_sum
+from pyspark.sql.functions import col, current_timestamp, from_json, round as spark_round, year, month, dayofmonth, lit
 from pyspark.sql.types import DoubleType, IntegerType, StringType, StructField, StructType, TimestampType
 
 
@@ -32,13 +32,27 @@ def write_batch(batch_df, batch_id: int) -> None:
         return
 
     enriched = batch_df.withColumn("batch_time", current_timestamp())
-    enriched.write.mode("append").parquet(f"{HDFS_NAMENODE_URL}/processed/reports/road_health_index")
-    enriched.write.format("jdbc").option("url", POSTGRES_JDBC_URL).option("dbtable", "road_health_index").option(
+    # Add partition columns: year, month, day, country, province, city
+    enriched = enriched.withColumn("year", year(col("batch_time"))) \
+        .withColumn("month", month(col("batch_time"))) \
+        .withColumn("day", dayofmonth(col("batch_time"))) \
+        .withColumn("country", lit("ID")) \
+        .withColumn("province", lit("JawaTimur")) \
+        .withColumn("city", lit("Surabaya"))
+    
+    # Write to Parquet with partitions (optimized storage)
+    enriched.write \
+        .mode("append") \
+        .partitionBy("year", "month", "day", "country", "province", "city") \
+        .parquet(f"{HDFS_NAMENODE_URL}/gold/priority_score")
+    
+    # Also write to PostgreSQL for analytics
+    enriched.write.format("jdbc").option("url", POSTGRES_JDBC_URL).option("dbtable", "priority_score").option(
         "user", POSTGRES_USER
     ).option("password", POSTGRES_PASSWORD).option("driver", "org.postgresql.Driver").mode("append").save()
 
 
-spark = SparkSession.builder.appName("SRIS Road Health Index").getOrCreate()
+spark = SparkSession.builder.appName("SRIS Priority Score").getOrCreate()
 spark.sparkContext.setLogLevel("WARN")
 
 events = (
@@ -51,21 +65,20 @@ events = (
 
 reports = events.select(from_json(col("value").cast("string"), schema).alias("data")).select("data.*")
 
-health_index = (
-    reports.groupBy("district")
-    .agg(
-        count("*").alias("report_count"),
-        avg("severity_score").alias("average_severity"),
-        spark_sum(expr("case when damage_type = 'D40_Pothole' then 1 else 0 end")).alias("pothole_count"),
-        spark_sum(expr("case when damage_type like '%Crack%' then 1 else 0 end")).alias("crack_count"),
-    )
-    .withColumn("road_health_index", lit(100) - col("average_severity"))
+priority = reports.select(
+    "report_id",
+    "road_name",
+    "district",
+    "damage_type",
+    "severity_score",
+    "confidence",
+    spark_round((col("severity_score") * 0.75) + (col("confidence") * 100 * 0.25), 2).alias("priority_score"),
 )
 
 query = (
-    health_index.writeStream.outputMode("complete")
+    priority.writeStream.outputMode("append")
     .foreachBatch(write_batch)
-    .option("checkpointLocation", f"{HDFS_NAMENODE_URL}/processed/reports/checkpoints/road_health_index")
+    .option("checkpointLocation", f"{HDFS_NAMENODE_URL}/checkpoints/gold/priority_score")
     .start()
 )
 

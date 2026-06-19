@@ -1,7 +1,7 @@
 import os
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import avg, col, count, current_timestamp, expr, from_json, lit, sum as spark_sum
+from pyspark.sql.functions import avg, col, count, current_timestamp, expr, from_json, lit, sum as spark_sum, year, month, dayofmonth
 from pyspark.sql.types import DoubleType, IntegerType, StringType, StructField, StructType, TimestampType
 
 
@@ -32,7 +32,21 @@ def write_batch(batch_df, batch_id: int) -> None:
         return
 
     enriched = batch_df.withColumn("batch_time", current_timestamp())
-    enriched.write.mode("append").parquet(f"{HDFS_NAMENODE_URL}/processed/reports/road_health_index")
+    # Add partition columns: year, month, day, country, province, city
+    enriched = enriched.withColumn("year", year(col("batch_time"))) \
+        .withColumn("month", month(col("batch_time"))) \
+        .withColumn("day", dayofmonth(col("batch_time"))) \
+        .withColumn("country", lit("ID")) \
+        .withColumn("province", lit("JawaTimur")) \
+        .withColumn("city", lit("Surabaya"))
+    
+    # Write to Parquet with partitions (optimized storage)
+    enriched.write \
+        .mode("append") \
+        .partitionBy("year", "month", "day", "country", "province", "city") \
+        .parquet(f"{HDFS_NAMENODE_URL}/gold/road_health_index")
+    
+    # Also write to PostgreSQL for analytics
     enriched.write.format("jdbc").option("url", POSTGRES_JDBC_URL).option("dbtable", "road_health_index").option(
         "user", POSTGRES_USER
     ).option("password", POSTGRES_PASSWORD).option("driver", "org.postgresql.Driver").mode("append").save()
@@ -65,7 +79,7 @@ health_index = (
 query = (
     health_index.writeStream.outputMode("complete")
     .foreachBatch(write_batch)
-    .option("checkpointLocation", f"{HDFS_NAMENODE_URL}/processed/reports/checkpoints/road_health_index")
+    .option("checkpointLocation", f"{HDFS_NAMENODE_URL}/checkpoints/gold/road_health_index")
     .start()
 )
 
