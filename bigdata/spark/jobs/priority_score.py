@@ -1,7 +1,7 @@
 import os
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, current_timestamp, from_json, round as spark_round
+from pyspark.sql.functions import col, current_timestamp, from_json, round as spark_round, year, month, dayofmonth, lit
 from pyspark.sql.types import DoubleType, IntegerType, StringType, StructField, StructType, TimestampType
 
 
@@ -32,7 +32,21 @@ def write_batch(batch_df, batch_id: int) -> None:
         return
 
     enriched = batch_df.withColumn("batch_time", current_timestamp())
-    enriched.write.mode("append").parquet(f"{HDFS_NAMENODE_URL}/processed/reports/priority_score")
+    # Add partition columns: year, month, day, country, province, city
+    enriched = enriched.withColumn("year", year(col("batch_time"))) \
+        .withColumn("month", month(col("batch_time"))) \
+        .withColumn("day", dayofmonth(col("batch_time"))) \
+        .withColumn("country", lit("ID")) \
+        .withColumn("province", lit("JawaTimur")) \
+        .withColumn("city", lit("Surabaya"))
+    
+    # Write to Parquet with partitions (optimized storage)
+    enriched.write \
+        .mode("append") \
+        .partitionBy("year", "month", "day", "country", "province", "city") \
+        .parquet(f"{HDFS_NAMENODE_URL}/gold/priority_score")
+    
+    # Also write to PostgreSQL for analytics
     enriched.write.format("jdbc").option("url", POSTGRES_JDBC_URL).option("dbtable", "priority_score").option(
         "user", POSTGRES_USER
     ).option("password", POSTGRES_PASSWORD).option("driver", "org.postgresql.Driver").mode("append").save()
@@ -64,7 +78,7 @@ priority = reports.select(
 query = (
     priority.writeStream.outputMode("append")
     .foreachBatch(write_batch)
-    .option("checkpointLocation", f"{HDFS_NAMENODE_URL}/processed/reports/checkpoints/priority_score")
+    .option("checkpointLocation", f"{HDFS_NAMENODE_URL}/checkpoints/gold/priority_score")
     .start()
 )
 
