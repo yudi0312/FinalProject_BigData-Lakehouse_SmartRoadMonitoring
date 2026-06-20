@@ -23,7 +23,7 @@
 # Laporan Akhir Final Project: Big Data Lakehouse & Smart Road Monitoring
 
 ## 1. Daftar Dokumen Pemenuhan CPMK
-Sebagai bentuk pertanggungjawaban atas perancangan dan implementasi sistem sesuai dengan rubrik penilaian Final Project (mendapatkan kriteria **Sangat Baik / A**), berikut adalah daftar ringkasan pemenuhan Capaian Pembelajaran Mata Kuliah (CPMK) beserta rasionalisasi arsitektur dan logikanya:
+Sebagai bentuk pertanggungjawaban atas perancangan dan implementasi sistem sesuai dengan rubrik penilaian Final Project, berikut adalah daftar ringkasan pemenuhan Capaian Pembelajaran Mata Kuliah (CPMK) beserta rasionalisasi arsitektur dan logikanya:
 
 ### CPMK 1: Identifikasi Masalah & Rancangan Ekosistem Big Data
 * **Dokumen:** [Identifikasi_Masalah.md](./docs/Identifikasi_Masalah.md)
