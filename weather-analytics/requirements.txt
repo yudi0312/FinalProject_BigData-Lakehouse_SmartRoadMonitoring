@@ -1,0 +1,13 @@
+requests==2.31.0
+python-dotenv==1.0.1
+
+# Windows: kalau error install pandas/SQLAlchemy, jalankan dulu:
+#   pip install "SQLAlchemy>=2.0.36" --upgrade
+#   pip install pandas --only-binary :all:
+SQLAlchemy
+psycopg2-binary
+pandas
+
+# Kafka - pakai kafka-python-ng (support Python 3.13)
+# pip uninstall kafka-python -y  (kalau sebelumnya install kafka-python)
+kafka-python-ng
