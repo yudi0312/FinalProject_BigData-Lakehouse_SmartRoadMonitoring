@@ -96,7 +96,7 @@ class BronzeLayer:
             .format("kafka")
             .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)
             .option("subscribe", KAFKA_TOPICS["traffic"])
-            .option("startingOffsets", "latest")
+            .option("startingOffsets", "earliest")
             .load()
         )
 
@@ -121,7 +121,7 @@ class BronzeLayer:
             .format("kafka")
             .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)
             .option("subscribe", KAFKA_TOPICS["news"])
-            .option("startingOffsets", "latest")
+            .option("startingOffsets", "earliest")
             .load()
         )
 
@@ -146,7 +146,7 @@ class BronzeLayer:
             .format("kafka")
             .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)
             .option("subscribe", KAFKA_TOPICS["accidents"])
-            .option("startingOffsets", "latest")
+            .option("startingOffsets", "earliest")
             .load()
         )
 
@@ -294,55 +294,40 @@ if __name__ == "__main__":
     # Reports
     reports_df = bronze.ingest_reports()
     reports_query = bronze.start_streaming(
-        reports_df,
-        HDFS_PATHS["bronze_reports"],
-        f"{HDFS_PATHS['checkpoints_bronze']}/reports",
-        "bronze_reports",
-        ["year", "month", "day", "country", "province", "city"]
+        reports_df, HDFS_PATHS["bronze_reports"], f"{HDFS_PATHS['checkpoints_bronze']}/reports", "bronze_reports",
+        ["date_partition", "district_partition"]
     )
     queries.append(reports_query)
 
     # Weather
     weather_df = bronze.ingest_weather()
     weather_query = bronze.start_streaming(
-        weather_df,
-        HDFS_PATHS["bronze_weather"],
-        f"{HDFS_PATHS['checkpoints_bronze']}/weather",
-        "bronze_weather",
-        ["year", "month", "day", "country", "province", "city"]
+        weather_df, HDFS_PATHS["bronze_weather"], f"{HDFS_PATHS['checkpoints_bronze']}/weather", "bronze_weather",
+        ["date_partition", "district_partition"]
     )
     queries.append(weather_query)
 
     # Traffic
     traffic_df = bronze.ingest_traffic()
     traffic_query = bronze.start_streaming(
-        traffic_df,
-        HDFS_PATHS["bronze_traffic"],
-        f"{HDFS_PATHS['checkpoints_bronze']}/traffic",
-        "bronze_traffic",
-        ["year", "month", "day"]
+        traffic_df, HDFS_PATHS["bronze_traffic"], f"{HDFS_PATHS['checkpoints_bronze']}/traffic", "bronze_traffic",
+        ["date_partition"]  # Traffic tidak menggunakan district_partition
     )
     queries.append(traffic_query)
 
     # News
     news_df = bronze.ingest_news()
     news_query = bronze.start_streaming(
-        news_df,
-        HDFS_PATHS["bronze_news"],
-        f"{HDFS_PATHS['checkpoints_bronze']}/news",
-        "bronze_news",
-        ["year", "month", "day"]
+        news_df, HDFS_PATHS["bronze_news"], f"{HDFS_PATHS['checkpoints_bronze']}/news", "bronze_news",
+        ["date_partition", "district_partition"]
     )
     queries.append(news_query)
 
     # Accidents
     accidents_df = bronze.ingest_accidents()
     accidents_query = bronze.start_streaming(
-        accidents_df,
-        HDFS_PATHS["bronze_accidents"],
-        f"{HDFS_PATHS['checkpoints_bronze']}/accidents",
-        "bronze_accidents",
-        ["year", "month", "day", "country", "province", "city"]
+        accidents_df, HDFS_PATHS["bronze_accidents"], f"{HDFS_PATHS['checkpoints_bronze']}/accidents", "bronze_accidents",
+        ["date_partition", "district_partition"]
     )
     queries.append(accidents_query)
 

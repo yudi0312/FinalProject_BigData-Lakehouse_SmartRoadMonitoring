@@ -45,6 +45,7 @@ services:
         kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic weather_data --partitions 3 --replication-factor 1
         kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic traffic_data --partitions 3 --replication-factor 1
         kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic news_data --partitions 3 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic accident_data --partitions 3 --replication-factor 1
     networks:
       - sris_bigdata
 
