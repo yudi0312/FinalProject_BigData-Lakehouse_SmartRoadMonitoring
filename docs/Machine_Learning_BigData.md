@@ -1,6 +1,6 @@
 # CPMK-4: Implementasi Machine Learning pada Big Data
 
-*Dokumen ini disusun khusus untuk memenuhi kriteria "Sangat Baik (A)" pada Rubrik Evaluasi CPMK-4, yang mencakup penerapan model tingkat lanjut, inovasi solusi analitik prediktif, serta evaluasi model yang mendalam.*
+*Dokumen ini disusun khusus untuk memenuhi kriteria  Rubrik Evaluasi CPMK-4, yang mencakup penerapan model tingkat lanjut, inovasi solusi analitik prediktif, serta evaluasi model yang mendalam.*
 
 ---
 
