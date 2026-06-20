@@ -33,7 +33,8 @@ Sebagai bentuk pertanggungjawaban atas perancangan dan implementasi sistem sesua
 #### Rancangan Workflow Ekosistem Keseluruhan (End-to-End)
 Sebagai realisasi dari identifikasi masalah di atas, berikut adalah kronologi aliran data sistem dari hulu ke hilir beserta arsitektur detail di setiap fasenya:
 
-![Arsitektur dan Workflow Ekosistem Big Data](./assets/Struktur-sistem-flow-aplikasi.webp)
+<img width="1536" height="1024" alt="ChatGPT Image Jun 20, 2026, 09_20_04 PM" src="https://github.com/user-attachments/assets/2d992c41-0c44-46bc-8d4c-cc5bb694b472" />
+
 
 1. **Fase Ingesti (Data Capture & Validation):** Pengguna mengirim laporan beserta foto jalan rusak melalui antarmuka **React Frontend**. Laporan ini diterima oleh **FastAPI Backend**, di mana foto tersebut langsung diumpankan ke model Computer Vision **YOLOv8** untuk klasifikasi jenis kerusakan (*Pothole/Crack*) dan perhitungan tingkat keparahan awal (*Severity Score*).
 
