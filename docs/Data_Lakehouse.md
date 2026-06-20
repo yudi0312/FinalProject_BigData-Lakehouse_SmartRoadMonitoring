@@ -8,7 +8,7 @@
 
 Sistem SRIS telah mengimplementasikan **Medallion Architecture (Bronze, Silver, Gold)** secara utuh dan terstruktur di dalam Apache Hadoop (HDFS). Konsep ini menjamin pergerakan data memiliki tingkatan *trust* (kualitas) dan kematangan yang semakin tinggi di setiap lapisannya, memisahkan secara tegas antara data mentah dengan data analitik.
 
-### 🥉 Bronze Layer (Raw Ingestion Data)
+###  Bronze Layer (Raw Ingestion Data)
 **Bronze Layer** adalah zona pendaratan pertama bagi seluruh data yang masuk ke dalam *Lakehouse*. Data di sini diperlakukan secara suci dan tidak boleh diubah (*immutable audit trail*).
 
 * **Fungsi Utama:** Menyimpan histori data mentah persis seperti apa adanya dari sumber aslinya tanpa adanya filter, penghapusan, atau transformasi apa pun. Hal ini sangat berguna jika di masa depan kita perlu mereproduksi ulang tabel Silver/Gold akibat *bug* pada logika pembersihan data.
@@ -21,7 +21,7 @@ Sistem SRIS telah mengimplementasikan **Medallion Architecture (Bronze, Silver, 
 
 ---
 
-### 🥈 Silver Layer (Cleaned, Conformed, & Standardized Data)
+###  Silver Layer (Cleaned, Conformed, & Standardized Data)
 **Silver Layer** adalah zona perantara di mana data mentah mulai "dijinakkan", dibersihkan, dan distandardisasi sehingga menjadi data *Enterprise* yang valid dan siap digabungkan (*joinable*).
 
 * **Fungsi Utama:** Menyingkirkan anomali data (seperti *spam*, *null values*), memformat ulang tipe data, serta menjaga integritas relasi. Data di layer ini adalah "*Single Source of Truth*" yang sering diakses oleh tim Data Science untuk melakukan *training* model *Machine Learning* tanpa harus membersihkan data lagi dari awal.
@@ -35,7 +35,7 @@ Sistem SRIS telah mengimplementasikan **Medallion Architecture (Bronze, Silver, 
 
 ---
 
-### 🥇 Gold Layer (Aggregated Analytical & Business-Level Data)
+###  Gold Layer (Aggregated Analytical & Business-Level Data)
 **Gold Layer** adalah lapisan puncak dari ekosistem analitik. Data di layer ini tidak lagi berfokus pada detail peristiwa individu, melainkan pada agregasi bisnis dan metrik tingkat tinggi yang diformulasikan khusus untuk divisualisasikan oleh instansi pemerintah (Dinas Pekerjaan Umum).
 
 * **Fungsi Utama:** Menyediakan ringkasan eksekutif dan proyeksi prediktif. Tabel Gold didesain sesederhana mungkin agar sangat cepat di-*query* oleh aplikasi BI (*Business Intelligence*) maupun *Dashboard* React kita, tanpa membebani komputasi Spark secara berulang-ulang.
