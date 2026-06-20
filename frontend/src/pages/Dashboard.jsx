@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, BrainCircuit, CalendarDays, Gauge, MapPinned, RefreshCw, Route } from "lucide-react";
-import { API_BASE_URL, fetchReports, fetchStats } from "../api";
+import { Activity, AlertTriangle, BrainCircuit, CalendarDays, Gauge, MapPinned, RefreshCw, Route, Server } from "lucide-react";
+import { API_BASE_URL, fetchReports, fetchStats, fetchHealthIndex, fetchPriorityScores } from "../api";
 import ReportsMapView from "../components/ReportsMapView";
 import StatCard from "../components/StatCard";
 
@@ -98,6 +98,8 @@ export default function Dashboard() {
     crack_count: 0,
   });
   const [reports, setReports] = useState(fallbackReports);
+  const [healthIndex, setHealthIndex] = useState([]);
+  const [priorityScores, setPriorityScores] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -105,11 +107,18 @@ export default function Dashboard() {
     setLoading(true);
     setError("");
     try {
-      const [statsData, reportsData] = await Promise.all([fetchStats(), fetchReports()]);
+      const [statsData, reportsData, healthData, priorityData] = await Promise.all([
+        fetchStats(), 
+        fetchReports(),
+        fetchHealthIndex().catch(() => []),
+        fetchPriorityScores().catch(() => [])
+      ]);
       setStats(statsData);
       setReports(reportsData.length ? reportsData : fallbackReports);
+      setHealthIndex(healthData);
+      setPriorityScores(priorityData);
     } catch (err) {
-      setError("Backend belum tersedia, menampilkan data contoh.");
+      setError("Backend belum tersedia penuh, menampilkan data yang bisa dimuat.");
       setReports(fallbackReports);
     } finally {
       setLoading(false);
@@ -247,6 +256,87 @@ export default function Dashboard() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* BIG DATA LAKEHOUSE SECTION */}
+      <div className="mt-8 border-t-2 border-dashed border-slate-200 pt-8">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="rounded-md bg-indigo-100 p-2 text-indigo-700">
+            <Server size={24} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Lakehouse Analytics</h2>
+            <p className="text-sm text-slate-500">Data real-time yang dihasilkan dari Apache Spark Pipeline (Big Data)</p>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Health Index */}
+          <div className="panel p-5">
+            <h3 className="mb-4 text-lg font-bold text-slate-900">Road Health Index per Kecamatan</h3>
+            {healthIndex.length === 0 ? (
+              <p className="text-sm text-slate-500">Belum ada data dari Spark Job.</p>
+            ) : (
+              <div className="space-y-4">
+                {healthIndex.map((hi) => (
+                  <div key={hi.id}>
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span className="font-semibold text-slate-700">{hi.district}</span>
+                      <span className="font-bold text-slate-900">{hi.road_health_index.toFixed(2)} / 100</span>
+                    </div>
+                    <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${hi.road_health_index}%` }} />
+                    </div>
+                    <div className="mt-1 flex gap-4 text-xs text-slate-500">
+                      <span>{hi.report_count} laporan</span>
+                      <span>{hi.pothole_count} Potholes</span>
+                      <span>{hi.crack_count} Cracks</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Priority Score Table */}
+          <div className="panel overflow-hidden">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <h3 className="text-lg font-bold text-slate-900">Top 10 Prioritas Perbaikan</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Jalan</th>
+                    <th className="px-4 py-3">Kecamatan</th>
+                    <th className="px-4 py-3">Kerusakan</th>
+                    <th className="px-4 py-3">Priority Score</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {priorityScores.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="px-4 py-4 text-center text-slate-500">Belum ada data prioritas dari Spark Job.</td>
+                    </tr>
+                  ) : (
+                    priorityScores.map((ps) => (
+                      <tr key={ps.id} className="hover:bg-amber-50">
+                        <td className="px-4 py-3 font-semibold text-slate-900">{ps.road_name || "Unknown"}</td>
+                        <td className="px-4 py-3 text-slate-600">{ps.district || "Unknown"}</td>
+                        <td className="px-4 py-3 text-slate-700">{ps.damage_type || "-"}</td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex rounded-md bg-amber-100 px-2.5 py-1 font-bold text-amber-800">
+                            {ps.priority_score.toFixed(2)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </section>

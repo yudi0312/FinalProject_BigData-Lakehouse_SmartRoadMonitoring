@@ -1,5 +1,12 @@
 import os
 import sys
+
+# Set HADOOP_HOME for Windows (not needed inside Docker/Linux)
+if os.name == "nt":
+    _hadoop_home = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "hadoop"))
+    os.environ.setdefault("HADOOP_HOME", _hadoop_home)
+    os.environ["PATH"] = os.path.join(_hadoop_home, "bin") + os.pathsep + os.environ.get("PATH", "")
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, from_json, to_timestamp, year, month, dayofmonth, current_timestamp, lit, coalesce
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, IntegerType, TimestampType
@@ -8,9 +15,16 @@ from pyspark.sql.types import StructType, StructField, StringType, DoubleType, I
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:29092")
 HDFS_NAMENODE_URL = os.getenv("HDFS_NAMENODE_URL", "hdfs://namenode:9000")
 
+# Auto-detect Spark version for correct Kafka package
+import pyspark
+_spark_ver = pyspark.__version__
+_scala_ver = "2.13" if int(_spark_ver.split(".")[0]) >= 4 else "2.12"
+_kafka_pkg = f"org.apache.spark:spark-sql-kafka-0-10_{_scala_ver}:{_spark_ver}"
+
 # Spark Session initialization
 spark = SparkSession.builder \
     .appName("SRIS Ingestion: Kafka to Bronze") \
+    .config("spark.jars.packages", _kafka_pkg) \
     .getOrCreate()
 spark.sparkContext.setLogLevel("WARN")
 

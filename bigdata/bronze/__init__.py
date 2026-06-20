@@ -3,10 +3,18 @@ Bronze Layer - Raw Data Ingestion
 Simpan semua data mentah dari Kafka ke HDFS tanpa transformasi.
 Setiap dataset memiliki ingestion timestamp dan metadata source.
 """
+import os
+import sys
 import json
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict
+
+# Set HADOOP_HOME for Windows (must be set before SparkSession creation)
+# bronze/__init__.py -> bigdata/ -> project_root/hadoop
+_hadoop_home = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "hadoop"))
+os.environ["HADOOP_HOME"] = _hadoop_home
+os.environ["PATH"] = os.path.join(_hadoop_home, "bin") + os.pathsep + os.environ.get("PATH", "")
 
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, SparkSession
@@ -278,6 +286,7 @@ if __name__ == "__main__":
     spark = SparkSession \
         .builder \
         .appName("SRIS Bronze Layer") \
+        .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.13:4.1.2") \
         .getOrCreate()
 
     bronze = BronzeLayer(spark)

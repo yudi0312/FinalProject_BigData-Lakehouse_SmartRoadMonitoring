@@ -11,8 +11,8 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db
-from .models import Report
-from .schemas import PredictionResponse, ReportCreateResponse, ReportResponse, StatsResponse
+from .models import Report, RoadHealthIndex, PriorityScore
+from .schemas import PredictionResponse, ReportCreateResponse, ReportResponse, StatsResponse, RoadHealthIndexResponse, PriorityScoreResponse
 from .services.yolo_service import DamagePrediction, YoloInferenceError, load_model, predict_damage
 
 
@@ -219,3 +219,39 @@ def get_stats(db: Session = Depends(get_db)) -> StatsResponse:
         pothole_count=pothole_count,
         crack_count=crack_count,
     )
+
+
+@app.get("/bigdata/health-index", response_model=list[RoadHealthIndexResponse])
+def get_health_index(db: Session = Depends(get_db)) -> list[RoadHealthIndex]:
+    # Ambil data terbaru per jalan berdasarkan batch_time terakhir
+    subquery = (
+        select(
+            RoadHealthIndex.road_name,
+            func.max(RoadHealthIndex.batch_time).label("max_batch_time")
+        )
+        .group_by(RoadHealthIndex.road_name)
+        .subquery()
+    )
+    
+    query = (
+        select(RoadHealthIndex)
+        .join(
+            subquery,
+            (RoadHealthIndex.road_name == subquery.c.road_name) &
+            (RoadHealthIndex.batch_time == subquery.c.max_batch_time)
+        )
+        .order_by(RoadHealthIndex.road_health_index.desc())
+    )
+    
+    return list(db.scalars(query).all())
+
+
+@app.get("/bigdata/priority-score", response_model=list[PriorityScoreResponse])
+def get_priority_scores(db: Session = Depends(get_db)) -> list[PriorityScore]:
+    # Ambil top 10 perbaikan jalan paling mendesak
+    query = (
+        select(PriorityScore)
+        .order_by(PriorityScore.priority_score.desc())
+        .limit(10)
+    )
+    return list(db.scalars(query).all())

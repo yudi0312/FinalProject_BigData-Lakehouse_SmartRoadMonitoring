@@ -24,3 +24,32 @@ class Report(Base):
     severity_score: Mapped[int | None] = mapped_column(Integer)
     confidence: Mapped[float | None] = mapped_column(Float)
     status: Mapped[str] = mapped_column(String(40), default="Pending", nullable=False)
+
+
+class RoadHealthIndex(Base):
+    __tablename__ = "road_health_index"
+
+    road_name: Mapped[str] = mapped_column(Text, primary_key=True)
+    district: Mapped[str | None] = mapped_column(Text)
+    severity: Mapped[float | None] = mapped_column(Float)
+    rainfall: Mapped[float] = mapped_column(Float, nullable=False)
+    traffic: Mapped[float] = mapped_column(Float, nullable=False)
+    road_age_score: Mapped[float] = mapped_column(Float, nullable=False)
+    road_health_index: Mapped[float | None] = mapped_column(Float)
+    batch_time: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+
+class PriorityScore(Base):
+    __tablename__ = "priority_score"
+
+    report_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    road_name: Mapped[str | None] = mapped_column(Text)
+    district: Mapped[str | None] = mapped_column(Text)
+    severity_score: Mapped[int | None] = mapped_column(Integer)
+    traffic_score: Mapped[float] = mapped_column(Float, nullable=False)
+    accident_score: Mapped[float] = mapped_column(Float, nullable=False)
+    complaint_score: Mapped[float] = mapped_column(Float, nullable=False)
+    news_score: Mapped[float] = mapped_column(Float, nullable=False)
+    priority_score: Mapped[float | None] = mapped_column(Float)
+    batch_time: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+

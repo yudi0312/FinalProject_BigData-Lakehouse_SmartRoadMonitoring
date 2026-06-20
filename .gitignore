@@ -45,3 +45,23 @@ yarn-error.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Big Data & Infrastructures (Do not leak HDFS/Kafka/Spark data)
+hadoop/namenode/
+hadoop/datanode/
+kafka_data/
+zookeeper_data/
+spark-warehouse/
+lakehouse/
+checkpoints/
+
+# Parquet & Spark temporary files
+*.parquet
+*.crc
+_SUCCESS
+.part-*
+
+# Machine Learning Models
+# Abaikan semua file model berukuran besar, HANYA track model utama.
+backend/models/*.pt
+!backend/models/best.pt

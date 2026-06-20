@@ -44,3 +44,31 @@ class StatsResponse(BaseModel):
     average_severity_score: float
     pothole_count: int
     crack_count: int
+
+
+class RoadHealthIndexResponse(BaseModel):
+    road_name: str
+    district: str | None
+    severity: float | None
+    rainfall: float
+    traffic: float
+    road_age_score: float
+    road_health_index: float | None
+    batch_time: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PriorityScoreResponse(BaseModel):
+    report_id: str
+    road_name: str | None
+    district: str | None
+    severity_score: int | None
+    traffic_score: float
+    accident_score: float
+    complaint_score: float
+    news_score: float
+    priority_score: float | None
+    batch_time: datetime
+
+    model_config = {"from_attributes": True}

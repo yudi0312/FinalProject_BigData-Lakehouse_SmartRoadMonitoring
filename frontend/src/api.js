@@ -23,3 +23,16 @@ export async function submitReport(formData) {
   }
   return response.json();
 }
+
+export async function fetchHealthIndex() {
+  const response = await fetch(`${API_BASE_URL}/bigdata/health-index`);
+  if (!response.ok) throw new Error("Gagal mengambil data Road Health Index.");
+  return response.json();
+}
+
+export async function fetchPriorityScores() {
+  const response = await fetch(`${API_BASE_URL}/bigdata/priority-score`);
+  if (!response.ok) throw new Error("Gagal mengambil data Priority Score.");
+  return response.json();
+}
+
