@@ -51,17 +51,42 @@ Sistem SRIS telah mengimplementasikan **Medallion Architecture (Bronze, Silver, 
 
 ---
 
-## 2. Format Penyimpanan dan Partisi
+## 2. Format Penyimpanan, Partisi, dan Contoh Hasil Analisis
 
 Sistem kami tidak sekadar menulis file ke HDFS, melainkan mengoptimalkannya dengan standar *Enterprise Data Engineering*:
 
+### A. Standar Format dan Pemartisian (Partitioning)
+
 1. **Format Apache Parquet**
-   Semua penulisan data dari Spark dikonversi ke dalam format `.parquet` (`df.write.parquet()`). Format ini mendukung kompresi *Snappy* secara *default*, yang meminimalkan *footprint* di dalam HDFS dan mempercepat *I/O*.
-2. **Partisi Berdasarkan Waktu dan Geografis (Partitioning)**
+   Semua penulisan data dari Spark dikonversi ke dalam format `.parquet` (`df.write.parquet()`). Format ini mendukung kompresi *Snappy* secara *default*, yang meminimalkan *footprint* penyimpanan di dalam HDFS dan mempercepat *I/O* pembacaan berkat model penyimpanannya yang berbasis kolom (*columnar storage*).
+2. **Partisi Hierarkis Berdasarkan Waktu dan Geografis**
    Mencegah *full table scan* yang lambat, kami mempartisi data secara hierarkis: `year=.../month=.../day=.../district=...`
+
+   Berikut adalah perbandingan skema penyimpanan dan partisi pada ketiga *layer* Lakehouse:
    
-   *Contoh output pada log direktori HDFS:*
-   ```text
-   /bronze/reports/year=2026/month=06/day=19/district=wonocolo/part-00000.snappy.parquet
-   ```
-   *Justifikasi:* Ketika Dashboard UI hanya meminta data bulan Juni 2026 di kecamatan Wonocolo, Spark hanya perlu membaca *folder* tersebut secara spesifik tanpa harus *scan* jutaan laporan jalan lain (proses *Predicate Pushdown* dan *Partition Pruning* berjalan optimal).
+   * **Bronze Layer (Raw):** Dipisahkan murni berdasarkan waktu ingesti untuk mempercepat penulisan (*write-heavy*).
+     ```text
+     /lakehouse/bronze/road_reports/year=2026/month=06/day=19/part-00000.snappy.parquet
+     ```
+   * **Silver Layer (Cleaned):** Dipisahkan berdasarkan waktu dan ditambahkan partisi *district* (kecamatan) karena data sudah memiliki struktur lokasi yang matang pasca proses *Geocoding*.
+     ```text
+     /lakehouse/silver/reports_clean/year=2026/month=06/day=19/district=wonocolo/part-00001.snappy.parquet
+     ```
+   * **Gold Layer (Aggregated):** Tidak lagi menyimpan data per baris peristiwa individu, melainkan menyimpan ringkasan (*snapshot*) agregasi harian yang ringkas dan siap disajikan.
+     ```text
+     /lakehouse/gold/road_health_index/year=2026/month=06/day=19/part-00002.snappy.parquet
+     ```
+   *Justifikasi Akselerasi:* Ketika Dashboard UI hanya meminta data "Kecamatan Wonocolo di bulan Juni 2026", Spark hanya perlu membaca *folder* Silver/Gold tersebut secara spesifik tanpa harus *scan* jutaan laporan jalan dari kecamatan lain di seluruh Surabaya (fitur *Predicate Pushdown* dan *Partition Pruning* berjalan sangat optimal).
+
+### B. Contoh Hasil Analisis (Gold Layer Output)
+
+Berikut adalah representasi data akhir (*tabular*) yang dihasilkan di *Gold Layer* setelah seluruh proses *JOIN* multidimensi dan Agregasi Machine Learning selesai. Data inilah yang akan disinkronisasikan ke PostgreSQL untuk di-render oleh React Frontend:
+
+| date | district_id | district_name | total_reports | avg_severity | rainfall_mm | road_health_index | repair_priority |
+|---|---|---|---|---|---|---|---|
+| 2026-06-19 | SBY-05 | Wonocolo | 142 | 85.4 | 45.2 | 12.5 (Kritis) | **High (1)** |
+| 2026-06-19 | SBY-12 | Rungkut | 45 | 40.2 | 12.0 | 65.0 (Cukup) | Medium (3) |
+| 2026-06-19 | SBY-02 | Genteng | 12 | 15.0 | 5.5 | 92.0 (Sangat Baik) | Low (5) |
+
+* **Penjelasan Analisis & Insight:**
+  Kecamatan **Wonocolo** terdeteksi mengalami anomali cuaca ekstrem (`rainfall_mm: 45.2`) dan secara bersamaan menerima ledakan 142 laporan kerusakan dengan tingkat keparahan (*Severity*) yang sangat tinggi dari model YOLOv8 (`avg_severity: 85.4`). Melalui komputasi gabungan di *Gold Layer*, sistem secara preskriptif menjatuhkan vonis **Road Health Index "Kritis"** dan langsung memberikan tanda **Prioritas Perbaikan Utama (High/1)** agar Dinas Pekerjaan Umum segera mengerahkan truk aspal ke area tersebut.
