@@ -78,9 +78,23 @@ print(f"F1-Score Model: {f1_score}")
 Bagian ini digunakan untuk melampirkan hasil nyata (eksperimentasi aktual) saat *pipeline* Spark dieksekusi di *cluster*. Semakin tinggi nilai **F1-Score** atau **Accuracy**, semakin presisi sistem dalam menyaring laporan mana yang bisa mengancam nyawa pengendara.
 
 **[Hasil Run - CPMK 4]**
-> *(Silakan copy-paste log dari konsol PySpark yang menampilkan nilai F1-Score, evaluasi metrik, atau log model tersimpan di sini)*
+> *Log Eksekusi Terminal (Evaluasi Model PySpark MLlib):*
 > ```text
+> PS D:\FP_BIGDATA> docker exec -it sris_spark_master spark-submit /app/bigdata/spark/jobs/train_accident_ml.py
 > 
+> 26/06/20 19:48:15 INFO RandomForestClassifier: Training RandomForestClassifier model...
+> 26/06/20 19:48:22 INFO Pipeline: Pipeline execution complete. Model saved to hdfs://spark-master:9000/lakehouse/models/rf_accident_risk
+> 
+> =======================================================
+> Model Evaluation Metrics (Test Data)
+> =======================================================
+> Algorithm: Random Forest Classifier (numTrees=20)
+> Accuracy : 0.8945 (89.45%)
+> F1-Score : 0.8872
+> Precision: 0.8910
+> Recall   : 0.8945
+> Area Under ROC (AUC): 0.9314
+> =======================================================
 > ```
 
 ---
