@@ -3,18 +3,10 @@ Bronze Layer - Raw Data Ingestion
 Simpan semua data mentah dari Kafka ke HDFS tanpa transformasi.
 Setiap dataset memiliki ingestion timestamp dan metadata source.
 """
-import os
-import sys
 import json
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict
-
-# Set HADOOP_HOME for Windows (must be set before SparkSession creation)
-# bronze/__init__.py -> bigdata/ -> project_root/hadoop
-_hadoop_home = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "hadoop"))
-os.environ["HADOOP_HOME"] = _hadoop_home
-os.environ["PATH"] = os.path.join(_hadoop_home, "bin") + os.pathsep + os.environ.get("PATH", "")
 
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, SparkSession
@@ -104,7 +96,7 @@ class BronzeLayer:
             .format("kafka")
             .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)
             .option("subscribe", KAFKA_TOPICS["traffic"])
-            .option("startingOffsets", "latest")
+            .option("startingOffsets", "earliest")
             .load()
         )
 
@@ -129,7 +121,7 @@ class BronzeLayer:
             .format("kafka")
             .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)
             .option("subscribe", KAFKA_TOPICS["news"])
-            .option("startingOffsets", "latest")
+            .option("startingOffsets", "earliest")
             .load()
         )
 
@@ -154,7 +146,7 @@ class BronzeLayer:
             .format("kafka")
             .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)
             .option("subscribe", KAFKA_TOPICS["accidents"])
-            .option("startingOffsets", "latest")
+            .option("startingOffsets", "earliest")
             .load()
         )
 
@@ -292,7 +284,6 @@ if __name__ == "__main__":
     spark = SparkSession \
         .builder \
         .appName("SRIS Bronze Layer") \
-        .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.13:4.1.2") \
         .getOrCreate()
 
     bronze = BronzeLayer(spark)
@@ -303,55 +294,40 @@ if __name__ == "__main__":
     # Reports
     reports_df = bronze.ingest_reports()
     reports_query = bronze.start_streaming(
-        reports_df,
-        HDFS_PATHS["bronze_reports"],
-        f"{HDFS_PATHS['checkpoints_bronze']}/reports",
-        "bronze_reports",
-        ["year", "month", "day", "country", "province", "city"]
+        reports_df, HDFS_PATHS["bronze_reports"], f"{HDFS_PATHS['checkpoints_bronze']}/reports", "bronze_reports",
+        ["date_partition", "district_partition"]
     )
     queries.append(reports_query)
 
     # Weather
     weather_df = bronze.ingest_weather()
     weather_query = bronze.start_streaming(
-        weather_df,
-        HDFS_PATHS["bronze_weather"],
-        f"{HDFS_PATHS['checkpoints_bronze']}/weather",
-        "bronze_weather",
-        ["year", "month", "day", "country", "province", "city"]
+        weather_df, HDFS_PATHS["bronze_weather"], f"{HDFS_PATHS['checkpoints_bronze']}/weather", "bronze_weather",
+        ["date_partition", "district_partition"]
     )
     queries.append(weather_query)
 
     # Traffic
     traffic_df = bronze.ingest_traffic()
     traffic_query = bronze.start_streaming(
-        traffic_df,
-        HDFS_PATHS["bronze_traffic"],
-        f"{HDFS_PATHS['checkpoints_bronze']}/traffic",
-        "bronze_traffic",
-        ["year", "month", "day"]
+        traffic_df, HDFS_PATHS["bronze_traffic"], f"{HDFS_PATHS['checkpoints_bronze']}/traffic", "bronze_traffic",
+        ["date_partition"]  # Traffic tidak menggunakan district_partition
     )
     queries.append(traffic_query)
 
     # News
     news_df = bronze.ingest_news()
     news_query = bronze.start_streaming(
-        news_df,
-        HDFS_PATHS["bronze_news"],
-        f"{HDFS_PATHS['checkpoints_bronze']}/news",
-        "bronze_news",
-        ["year", "month", "day"]
+        news_df, HDFS_PATHS["bronze_news"], f"{HDFS_PATHS['checkpoints_bronze']}/news", "bronze_news",
+        ["date_partition", "district_partition"]
     )
     queries.append(news_query)
 
     # Accidents
     accidents_df = bronze.ingest_accidents()
     accidents_query = bronze.start_streaming(
-        accidents_df,
-        HDFS_PATHS["bronze_accidents"],
-        f"{HDFS_PATHS['checkpoints_bronze']}/accidents",
-        "bronze_accidents",
-        ["year", "month", "day", "country", "province", "city"]
+        accidents_df, HDFS_PATHS["bronze_accidents"], f"{HDFS_PATHS['checkpoints_bronze']}/accidents", "bronze_accidents",
+        ["date_partition", "district_partition"]
     )
     queries.append(accidents_query)
 
