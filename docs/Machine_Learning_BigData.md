@@ -85,5 +85,5 @@ Bagian ini digunakan untuk melampirkan hasil nyata (eksperimentasi aktual) saat 
 
 ---
 
-### Inovasi Solusi (Memenuhi Matriks "A")
+### Inovasi Solusi
 Implementasi *Machine Learning* ini tidak berjalan sebagai proses terpisah. Inovasi utamanya adalah model yang telah dilatih (`.save()`) akan **langsung di-load dan digunakan (inferensi)** oleh tugas pemrosesan *Lakehouse (Gold Layer)*. Dengan demikian, setiap *streaming* data baru yang masuk dari Kafka akan secara otomatis disiram dengan "Skor Probabilitas Bahaya" secara *real-time* sebelum disajikan ke aplikasi React, membuktikan pencapaian otomatisasi analitik kelas atas.
